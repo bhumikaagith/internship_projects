@@ -1,0 +1,198 @@
+#include <iostream>
+#include <string>
+#include <vector>
+using namespace std;
+
+// Base User class
+class User {
+protected:
+    string name;
+    int id;
+public:
+    User(string n, int i) : name(n), id(i) {}
+
+    int getId() const { return id; }  // Getter for id
+
+    void viewProfile() const {
+        cout << "Name: " << name << ", ID: " << id << endl;
+    }
+};
+
+// Student class
+class Student : public User {
+    float marks;
+    float attendance;
+public:
+    Student(string n, int i, float m, float a) : User(n, i), marks(m), attendance(a) {}
+
+    void viewMarks() const {
+        cout << "Marks: " << marks << endl;
+    }
+
+    void viewAttendance() const {
+        cout << "Attendance: " << attendance << "%" << endl;
+    }
+
+    void setMarks(float m) {
+        marks = m;
+    }
+
+    void setAttendance(float a) {
+        attendance = a;
+    }
+};
+
+// Teacher class
+class Teacher : public User {
+public:
+    Teacher(string n, int i) : User(n, i) {}
+
+    void addMarks(Student &s, float newMarks) {
+        s.setMarks(newMarks);
+        cout << "Marks updated to: " << newMarks << endl;
+    }
+
+    void addAttendance(Student &s, float newAttendance) {
+        s.setAttendance(newAttendance);
+        cout << "Attendance updated to: " << newAttendance << "%" << endl;
+    }
+};
+
+// Admin class
+class Admin : public User {
+public:
+    Admin(string n, int i) : User(n, i) {}
+
+    void createProfile(vector<Student> &students, string n, int id, float marks, float attendance) {
+        students.emplace_back(n, id, marks, attendance);
+        cout << "New student profile created for " << n << " with ID " << id << endl;
+    }
+
+    void viewAllProfiles(const vector<Student> &students) const {
+        for (const auto &s : students) {
+            s.viewProfile();
+            s.viewMarks();
+            s.viewAttendance();
+            cout << "----------------------" << endl;
+        }
+    }
+};
+
+// Portals for different roles
+void studentPortal(const Student &s) {
+    while (true) {
+        cout << "\nStudent Portal:\n1. View Marks\n2. View Attendance\n3. View Profile\n4. Exit\nChoose an option: ";
+        int choice;
+        cin >> choice;
+        switch (choice) {
+            case 1: s.viewMarks(); break;
+            case 2: s.viewAttendance(); break;
+            case 3: s.viewProfile(); break;
+            case 4: return;
+            default: cout << "Invalid option!" << endl;
+        }
+    }
+}
+
+void teacherPortal(Teacher &t, Student &s) {
+    while (true) {
+        cout << "\nTeacher Portal:\n1. Add Marks\n2. Add Attendance\n3. View Student Profile\n4. Exit\nChoose an option: ";
+        int choice;
+        cin >> choice;
+        switch (choice) {
+            case 1: {
+                float newMarks;
+                cout << "Enter new marks: ";
+                cin >> newMarks;
+                t.addMarks(s, newMarks);
+                break;
+            }
+            case 2: {
+                float newAttendance;
+                cout << "Enter new attendance: ";
+                cin >> newAttendance;
+                t.addAttendance(s, newAttendance);
+                break;
+            }
+            case 3: s.viewProfile(); break;
+            case 4: return;
+            default: cout << "Invalid option!" << endl;
+        }
+    }
+}
+
+void adminPortal(Admin &a, vector<Student> &students) {
+    while (true) {
+        cout << "\nAdmin Portal:\n1. Create Student Profile\n2. View All Profiles\n3. Exit\nChoose an option: ";
+        int choice;
+        cin >> choice;
+        switch (choice) {
+            case 1: {
+                string name;
+                int id;
+                float marks, attendance;
+                cout << "Enter student name: ";
+                cin >> name;
+                cout << "Enter student ID: ";
+                cin >> id;
+                cout << "Enter marks: ";
+                cin >> marks;
+                cout << "Enter attendance: ";
+                cin >> attendance;
+                a.createProfile(students, name, id, marks, attendance);
+                break;
+            }
+            case 2: a.viewAllProfiles(students); break;
+            case 3: return;
+            default: cout << "Invalid option!" << endl;
+        }
+    }
+}
+
+int main() {
+    vector<Student> students = {
+        Student("Alice", 101, 85.5, 92.0),
+        Student("Bob", 102, 78.0, 88.5)
+    };
+
+    while (true) {
+        cout << "\nChoose Role:\n1. Student/Parent\n2. Teacher\n3. Admin\n4. Exit\nEnter choice: ";
+        int role;
+        cin >> role;
+
+        if (role == 1) {
+            cout << "Enter student ID to login: ";
+            int id;
+            cin >> id;
+            for (const auto &s : students) {
+                if (s.getId() == id) {
+                    studentPortal(s);
+                    break;
+                }
+            }
+            cout << "Student not found!" << endl;
+        } else if (role == 2) {
+            Teacher teacher("Mr. Smith", 201);
+            cout << "Enter student ID to manage: ";
+            int id;
+            cin >> id;
+            for (auto &s : students) {
+                if (s.getId() == id) {
+                    teacherPortal(teacher, s);
+                    break;
+                }
+            }
+            cout << "Student not found!" << endl;
+        } else if (role == 3) {
+            Admin admin("Admin", 301);
+            adminPortal(admin, students);
+        } else if (role == 4) {
+            cout << "Exiting the program. Goodbye!" << endl;
+            break;
+        } else {
+            cout << "Invalid role!" << endl;
+        }
+    }
+
+    return 0;
+}
