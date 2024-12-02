@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 // Base User class
@@ -11,7 +12,7 @@ protected:
 public:
     User(string n, int i) : name(n), id(i) {}
 
-    int getId() const { return id; }  // Getter for id
+    int getId() const { return id; }
 
     void viewProfile() const {
         cout << "Name: " << name << ", ID: " << id << endl;
@@ -39,6 +40,20 @@ public:
 
     void setAttendance(float a) {
         attendance = a;
+    }
+
+    // Save student data to a file
+    void saveToFile(ofstream &out) const {
+        out << name << " " << id << " " << marks << " " << attendance << endl;
+    }
+
+    // Load student data from a file
+    static Student loadFromFile(ifstream &in) {
+        string name;
+        int id;
+        float marks, attendance;
+        in >> name >> id >> marks >> attendance;
+        return Student(name, id, marks, attendance);
     }
 };
 
@@ -77,6 +92,29 @@ public:
         }
     }
 };
+
+// Save all students to a file
+void saveStudentsToFile(const vector<Student> &students, const string &filename) {
+    ofstream out(filename);
+    for (const auto &student : students) {
+        student.saveToFile(out);
+    }
+    cout << "Student data saved successfully!" << endl;
+}
+
+// Load all students from a file
+void loadStudentsFromFile(vector<Student> &students, const string &filename) {
+    ifstream in(filename);
+    if (!in) {
+        cout << "No data file found. Starting with an empty student list." << endl;
+        return;
+    }
+    while (in) {
+        Student s = Student::loadFromFile(in);
+        if (in) students.push_back(s);  // Avoid adding empty data at EOF
+    }
+    cout << "Student data loaded successfully!" << endl;
+}
 
 // Portals for different roles
 void studentPortal(const Student &s) {
@@ -123,7 +161,7 @@ void teacherPortal(Teacher &t, Student &s) {
 
 void adminPortal(Admin &a, vector<Student> &students) {
     while (true) {
-        cout << "\nAdmin Portal:\n1. Create Student Profile\n2. View All Profiles\n3. Exit\nChoose an option: ";
+        cout << "\nAdmin Portal:\n1. Create Student Profile\n2. View All Profiles\n3. Save Data\n4. Exit\nChoose an option: ";
         int choice;
         cin >> choice;
         switch (choice) {
@@ -143,17 +181,16 @@ void adminPortal(Admin &a, vector<Student> &students) {
                 break;
             }
             case 2: a.viewAllProfiles(students); break;
-            case 3: return;
+            case 3: saveStudentsToFile(students, "students.txt"); break;
+            case 4: return;
             default: cout << "Invalid option!" << endl;
         }
     }
 }
 
 int main() {
-    vector<Student> students = {
-        Student("Alice", 101, 85.5, 92.0),
-        Student("Bob", 102, 78.0, 88.5)
-    };
+    vector<Student> students;
+    loadStudentsFromFile(students, "students.txt");
 
     while (true) {
         cout << "\nChoose Role:\n1. Student/Parent\n2. Teacher\n3. Admin\n4. Exit\nEnter choice: ";
@@ -164,29 +201,34 @@ int main() {
             cout << "Enter student ID to login: ";
             int id;
             cin >> id;
+            bool found = false;
             for (const auto &s : students) {
                 if (s.getId() == id) {
                     studentPortal(s);
+                    found = true;
                     break;
                 }
             }
-            cout << "Student not found!" << endl;
+            if (!found) cout << "Student not found!" << endl;
         } else if (role == 2) {
             Teacher teacher("Mr. Smith", 201);
             cout << "Enter student ID to manage: ";
             int id;
             cin >> id;
+            bool found = false;
             for (auto &s : students) {
                 if (s.getId() == id) {
                     teacherPortal(teacher, s);
+                    found = true;
                     break;
                 }
             }
-            cout << "Student not found!" << endl;
+            if (!found) cout << "Student not found!" << endl;
         } else if (role == 3) {
             Admin admin("Admin", 301);
             adminPortal(admin, students);
         } else if (role == 4) {
+            saveStudentsToFile(students, "students.txt");
             cout << "Exiting the program. Goodbye!" << endl;
             break;
         } else {
@@ -196,3 +238,4 @@ int main() {
 
     return 0;
 }
+
